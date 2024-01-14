@@ -12,7 +12,8 @@ import {
 } from '@nestjs/common';
 
 import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
+import { RegisterUserDto } from './dto/register-user.dto';
+import { LoginUserDto } from "./dto/login-user.dto"
 import { UpdateUserDto } from './dto/update-user.dto';
 
 @Controller('users')
@@ -20,15 +21,15 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) { }
 
   @HttpCode(HttpStatus.CREATED)
-  @Post('/create')
-  async create(@Body() body: CreateUserDto) {
-    return this.usersService.create(body);
+  @Post('/register')
+  async register(@Body() body: RegisterUserDto) {
+    return this.usersService.register(body);
   }
 
   @HttpCode(HttpStatus.OK)
-  @Get('/all')
-  findAll() {
-    return this.usersService.findAll();
+  @Post('/login')
+  async login(@Body() body: LoginUserDto) {
+    return this.usersService.login(body);
   }
 
   @HttpCode(HttpStatus.OK)

@@ -12,21 +12,27 @@ export class UsersEntity extends BaseEntity {
         type: 'character varying',
         length: 100
     })
-    username: string
+    firstname: string
+
+    @Column({
+        type: 'character varying',
+        length: 100
+    })
+    lastname: string
 
     @Column({
         type: Number
     })
-    userage: number
+    phone: number
 
     @Column({
         type: "character varying"
     })
-    phone: string
+    email: string
 
     @Column({
         type: "character varying"
     })
-    location: string
+    password: string
 
 }

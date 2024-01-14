@@ -1,40 +1,75 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 
-
-import { CreateUserDto } from './dto/create-user.dto';
+import JwtStrategy from '../../utils/utils';
+import { RegisterUserDto } from './dto/register-user.dto';
+import { LoginUserDto } from "./dto/login-user.dto"
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersEntity } from '../../entities/users.entity';
 
 @Injectable()
 export class UsersService {
-  async create(badyDto: CreateUserDto): Promise<void> {
-    await UsersEntity.createQueryBuilder()
+  async register(badyDto: RegisterUserDto): Promise<any> {
+
+    const findUser = await UsersEntity.findOne({
+      where: {
+        email: badyDto.email
+      }
+    })
+
+    if (findUser) {
+      return "User olin ro'yxatdan O'tgan"
+    }
+
+    const newUser = await UsersEntity.createQueryBuilder()
       .insert()
       .into(UsersEntity)
       .values({
-        username: badyDto.username,
-        userage: badyDto.userage,
+        firstname: badyDto.first_name,
+        lastname: badyDto.last_name,
         phone: badyDto.phone,
-        location: badyDto.location
+        email: badyDto.email,
+        password: badyDto.password
 
       })
+      .returning(['email'])
       .execute()
       .catch(() => {
         throw new HttpException('Bad request', HttpStatus.BAD_REQUEST)
       })
 
+    const token = JwtStrategy.sign({ email: newUser.raw[0]?.email })
+
+    return {
+      code: 200,
+      access_token: token
+    }
   }
 
-  async findAll() {
-    return await UsersEntity.find({
-      relations: {
-        // 
+  async login(bodyDto: LoginUserDto): Promise<any> {
+    const user = await UsersEntity.findOne({
+      where: {
+        email: bodyDto.email
       }
     })
-      .catch(() => {
-        throw new HttpException('User not fount', HttpStatus.NOT_FOUND)
-      })
 
+    if (!user) {
+      return {
+        code: 404,
+        message: "You are not registered"
+      }
+    } else if (user.password !== bodyDto.password) {
+      return {
+        code: 400,
+        message: "Your password is not correct"
+      }
+    }
+
+    const token = JwtStrategy.sign({ email: user.email })
+
+    return {
+      code: 200,
+      access_token: token
+    }
 
   }
 
@@ -59,10 +94,10 @@ export class UsersService {
     await UsersEntity.createQueryBuilder()
       .update(UsersEntity)
       .set({
-        username: updateDto.username ? updateDto.username : user.username,
-        userage: updateDto.userage ? updateDto.userage : user.userage,
-        phone: updateDto.phone ? updateDto.phone : user.phone,
-        location: updateDto.location ? updateDto.location : user.location
+        // username: updateDto.username ? updateDto.username : user.username,
+        // userage: updateDto.userage ? updateDto.userage : user.userage,
+        // phone: updateDto.phone ? updateDto.phone : user.phone,
+        // location: updateDto.location ? updateDto.location : user.location
       })
       .where({
         userId: id

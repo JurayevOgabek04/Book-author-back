@@ -6,17 +6,20 @@ import {
   Patch,
   Param,
   Delete,
+  Headers,
   HttpCode,
   HttpStatus,
-  ParseUUIDPipe
+  ParseUUIDPipe,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express'
 
 import { UsersService } from './users.service';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto } from "./dto/login-user.dto"
-import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateAccountDto } from './dto/update-account.dto';
+import { UpdateSecurityDto } from "./dto/update-security.dto"
 
-@Controller('users')
+@Controller('user')
 export class UsersController {
   constructor(private readonly usersService: UsersService) { }
 
@@ -33,15 +36,27 @@ export class UsersController {
   }
 
   @HttpCode(HttpStatus.OK)
-  @Get('/one/:id')
-  findOne(@Param('id', new ParseUUIDPipe({ version: "4" })) id: string) {
-    return this.usersService.findOne(id);
+  @Get('/me')
+  async findOne(
+    @Headers('Authorization') token: string
+  ) {
+    return this.usersService.findOne(token);
   }
 
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Patch('/update/:id')
-  update(@Param('id', new ParseUUIDPipe({ version: "4" })) id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.updateUser(id, updateUserDto);
+  @Patch('/account')
+  async updateUser(
+    @Headers('Authorization') token: string,
+    @Body() AccountDto: UpdateAccountDto) {
+    return this.usersService.updateAccount(AccountDto, token);
+  }
+
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Patch('/security')
+  async updateSecurity(
+    @Headers('Authorization') token: string,
+    @Body() SecurityDto: UpdateSecurityDto) {
+    return this.usersService.updateSecurity(SecurityDto, token);
   }
 
 

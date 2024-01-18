@@ -3,7 +3,8 @@ import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import JwtStrategy from '../../utils/utils';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto } from "./dto/login-user.dto"
-import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateAccountDto } from './dto/update-account.dto';
+import { UpdateSecurityDto } from "./dto/update-security.dto";
 import { UsersEntity } from '../../entities/users.entity';
 
 @Injectable()
@@ -44,7 +45,9 @@ export class UsersService {
       access_token: token
     }
   }
+  // USER REGISTER FINISHING
 
+  // USER LOGIN START
   async login(bodyDto: LoginUserDto): Promise<any> {
     const user = await UsersEntity.findOne({
       where: {
@@ -73,18 +76,31 @@ export class UsersService {
 
   }
 
-  async findOne(id: string) {
+  // USER LOGIN FINISHING
+
+  // USER ME STARTING
+
+  async findOne(token: string) {
+    const userOne = JwtStrategy.verify(token)
     return await UsersEntity.findOne({
       where: {
-        userId: id
+        email: userOne.email
       }
     })
+      .catch(() => {
+        throw new HttpException('user not found', HttpStatus.NOT_FOUND)
+      })
   }
 
-  async updateUser(id: string, updateDto: UpdateUserDto) {
+  // USER ME FINISHING
+
+  // USER ACCOUNT START
+
+  async updateAccount(updateDto: UpdateAccountDto, token: string) {
+    const userFind = JwtStrategy.verify(token)
     const user = await UsersEntity.findOne({
       where: {
-        userId: id
+        email: userFind.email
       }
     })
       .catch(() => {
@@ -94,19 +110,59 @@ export class UsersService {
     await UsersEntity.createQueryBuilder()
       .update(UsersEntity)
       .set({
-        // username: updateDto.username ? updateDto.username : user.username,
-        // userage: updateDto.userage ? updateDto.userage : user.userage,
-        // phone: updateDto.phone ? updateDto.phone : user.phone,
-        // location: updateDto.location ? updateDto.location : user.location
+        firstname: updateDto.first_name ? updateDto.first_name : user.firstname,
+        lastname: updateDto.last_name ? updateDto.last_name : user.lastname,
+        phone: updateDto.phone ? updateDto.phone : user.phone,
       })
       .where({
-        userId: id
+        email: userFind.email
       })
       .execute()
       .catch(() => {
         throw new HttpException("BAD REQUEST", HttpStatus.BAD_REQUEST)
       })
   }
+
+  // ACCOUNT UPDATE FINING
+
+  // START UPDATE SECURITY
+
+  async updateSecurity(updateDto: UpdateSecurityDto, token: string) {
+    const userFind = JwtStrategy.verify(token)
+
+    const user = await UsersEntity.findOne({
+      where: {
+        email: userFind.email
+      }
+    })
+      .catch(() => {
+        throw new HttpException('user not found', HttpStatus.NOT_FOUND)
+      })
+
+    if (updateDto.newPassword != updateDto.confirmPassword) {
+      return {
+        code: 400,
+        message: "Confirm password does not match"
+      }
+    }
+
+    await UsersEntity.createQueryBuilder()
+      .update(UsersEntity)
+      .set({
+        email: updateDto.email ? updateDto.email : user.email,
+        password: updateDto.newPassword ? updateDto.newPassword : user.password,
+
+      })
+      .where({
+        email: userFind.email
+      })
+      .execute()
+      .catch(() => {
+        throw new HttpException("BAD REQUEST", HttpStatus.BAD_REQUEST)
+      })
+  }
+
+  // USER UPDATE FINISHING
 
   async removeUser(id: string) {
     await UsersEntity
